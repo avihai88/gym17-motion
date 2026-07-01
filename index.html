@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>חיישני תנועה - סנסיבו</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 2rem;
+            color: #38bdf8;
+        }
+        .container {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+            max-width: 800px;
+        }
+        .card {
+            background-color: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 24px;
+            width: 220px;
+            text-align: center;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .room-name {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+        }
+        .status {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.95rem;
+            font-weight: 700;
+        }
+        .motion-true {
+            background-color: #7f1d1d;
+            color: #fca5a5;
+            border: 1px solid #991b1b;
+        }
+        .motion-false {
+            background-color: #064e3b;
+            color: #6ee7b7;
+            border: 1px solid #065f46;
+        }
+        .loading {
+            color: #94a3b8;
+            font-size: 1.1rem;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>מצב תנועה בזמן אמת</h1>
+    <div id="rooms-container" class="container">
+        <div class="loading">מתחבר לשרת המקומי ומקבל נתונים מסנסיבו...</div>
+    </div>
+
+    <script>
+        async function updateMotionStatus() {
+            try {
+                const response = await fetch('https://gym17-sensibo-motion.avihai88.workers.dev/');
+                if (!response.ok) throw new Error('Server error');
+                
+                const data = await response.json();
+                const container = document.getElementById('rooms-container');
+                
+                if (data.length === 0) {
+                    container.innerHTML = '<div class="loading">לא נמצאו חיישני תנועה פעילים בחשבון.</div>';
+                    return;
+                }
+
+                container.innerHTML = data.map(room => `
+                    <div class="card">
+                        <div class="room-name">${room.roomName}</div>
+                        <div class="status ${room.hasMotion ? 'motion-true' : 'motion-false'}">
+                            ${room.hasMotion ? '🏃 התגלתה תנועה' : '🟢 אין תנועה'}
+                        </div>
+                    </div>
+                `).join('');
+
+            } catch (error) {
+                document.getElementById('rooms-container').innerHTML = 
+                    '<div class="loading" style="color: #ef4444;">שגיאה בתקשורת עם השרת (ודא ש-server.js רץ)</div>';
+            }
+        }
+
+        // הפעלה ראשונית של הדף
+        updateMotionStatus();
+        
+        // רענון אוטומטי של הסטטוס כל 5 שניות
+        setInterval(updateMotionStatus, 5000);
+    </script>
+</body>
+</html>
